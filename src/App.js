@@ -1,10 +1,18 @@
-import React from 'react';
-import 'bootstrap/dist/css/bootstrap.min.css';
-import './App.css';
+import React from "react";
+import "bootstrap/dist/css/bootstrap.min.css";
+import "./App.css";
+import MyForm from "./components/MyForm";
+import { Container, Row, Col } from "react-bootstrap";
 
 function App() {
   return (
-    <h1>Hello!</h1>
+    <Container fluid>
+      <Row>
+        <Col>
+          <MyForm></MyForm>
+        </Col>
+      </Row>
+    </Container>
   );
 }
 
