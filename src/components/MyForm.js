@@ -31,6 +31,7 @@ export default class MyForm extends Component {
               rows="3"
               value={this.state.lyrics}
               onChange={this.handleLyricsChange}
+              placeholder="Enter lyrics here..."
             />
           </Form.Group>
           <Button variant="primary" type="submit">
