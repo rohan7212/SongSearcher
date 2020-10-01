@@ -1,11 +1,13 @@
 import React, { Component } from "react";
-import { Form, Button } from "react-bootstrap";
+import { Form, Button, Card } from "react-bootstrap";
+import * as Musixmatch from "musixmatch-node";
 
 export default class MyForm extends Component {
   constructor(props) {
     super(props);
     this.state = {
       lyrics: "",
+      song: "",
     };
     this.handleLyricsChange = this.handleLyricsChange.bind(this);
     this.handleSubmit = this.handleSubmit.bind(this);
@@ -15,9 +17,18 @@ export default class MyForm extends Component {
     this.setState({ lyrics: event.target.value });
   }
 
-  handleSubmit(event) {
+  async handleSubmit(event) {
     event.preventDefault();
-    alert(this.state.lyrics);
+    const mxm = new Musixmatch("179e0011e5cff7cbbc059b9ebb27ce57");
+    const foundSong = await mxm.searchTrack({
+      q_lyrics: this.state.lyrics,
+      s_track_rating: "desc",
+    });
+    console.log(foundSong.message.body.track_list[0].track);
+    this.setState({
+      song: foundSong.message.body.track_list[0].track.track_name,
+    });
+    console.log(this.state.song);
   }
 
   render() {
@@ -38,6 +49,13 @@ export default class MyForm extends Component {
             Submit
           </Button>
         </Form>
+        <Card style={{ width: "18rem" }}>
+          <Card.Img variant="top" src="holder.js/100px180" />
+          <Card.Body>
+            <Card.Title>{this.state.song}</Card.Title>
+            <Card.Text></Card.Text>
+          </Card.Body>
+        </Card>
       </div>
     );
   }
