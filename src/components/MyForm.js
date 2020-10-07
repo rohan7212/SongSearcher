@@ -1,5 +1,5 @@
 import React, { Component } from "react";
-import { Form, Button, Card } from "react-bootstrap";
+import { Form, Button, Card, CardDeck } from "react-bootstrap";
 import * as Musixmatch from "musixmatch-node";
 
 export default class MyForm extends Component {
@@ -7,7 +7,7 @@ export default class MyForm extends Component {
     super(props);
     this.state = {
       lyrics: "",
-      song: "",
+      song: [],
     };
     this.handleLyricsChange = this.handleLyricsChange.bind(this);
     this.handleSubmit = this.handleSubmit.bind(this);
@@ -24,11 +24,10 @@ export default class MyForm extends Component {
       q_lyrics: this.state.lyrics,
       s_track_rating: "desc",
     });
-    console.log(foundSong.message.body.track_list[0].track);
     this.setState({
-      song: foundSong.message.body.track_list[0].track.track_name,
+      song: foundSong.message.body.track_list.slice(0, 5),
     });
-    console.log(this.state.song);
+    console.log(foundSong.message.body.track_list);
   }
 
   render() {
@@ -49,13 +48,19 @@ export default class MyForm extends Component {
             Submit
           </Button>
         </Form>
-        <Card style={{ width: "18rem" }}>
-          <Card.Img variant="top" src="holder.js/100px180" />
-          <Card.Body>
-            <Card.Title>{this.state.song}</Card.Title>
-            <Card.Text></Card.Text>
-          </Card.Body>
-        </Card>
+        <br />
+        <CardDeck>
+          {this.state.song.map((item, index) => (
+            <Card style={{ width: "18rem" }}>
+              <Card.Body>
+                <Card.Title>{item.track.track_name}</Card.Title>
+                <hr />
+                <Card.Text>{item.track.artist_name}</Card.Text>
+                <Card.Text>{item.track.album_name}</Card.Text>
+              </Card.Body>
+            </Card>
+          ))}
+        </CardDeck>
       </div>
     );
   }
