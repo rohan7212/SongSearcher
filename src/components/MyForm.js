@@ -1,6 +1,7 @@
 import React, { Component } from "react";
 import { Form, Button, Card, CardDeck } from "react-bootstrap";
 import * as Musixmatch from "musixmatch-node";
+import * as albumArt from "album-art";
 
 export default class MyForm extends Component {
   constructor(props) {
@@ -8,9 +9,11 @@ export default class MyForm extends Component {
     this.state = {
       lyrics: "",
       song: [],
+      albumArts: [],
     };
     this.handleLyricsChange = this.handleLyricsChange.bind(this);
     this.handleSubmit = this.handleSubmit.bind(this);
+    this.getAlbumArt = this.getAlbumArt.bind(this);
   }
 
   handleLyricsChange(event) {
@@ -28,6 +31,30 @@ export default class MyForm extends Component {
       song: foundSong.message.body.track_list.slice(0, 5),
     });
     console.log(foundSong.message.body.track_list);
+    var tempAlbumArts = [];
+    for (var i = 0; i < this.state.song.length; i++) {
+      var url = await this.getAlbumArt(
+        foundSong.message.body.track_list[i].track.artist_name,
+        foundSong.message.body.track_list[i].track.album_name
+      );
+      tempAlbumArts.push(url);
+    }
+    this.setState({
+      albumArts: tempAlbumArts,
+    });
+  }
+
+  async getAlbumArt(artistName, albumName) {
+    var url = "";
+
+    await albumArt(artistName, { album: albumName }, (error, response) => {
+      url = response;
+      //=> http://path/to/rush.jpg
+    });
+
+    console.log(url);
+
+    return url;
   }
 
   render() {
@@ -52,6 +79,7 @@ export default class MyForm extends Component {
         <CardDeck>
           {this.state.song.map((item, index) => (
             <Card style={{ width: "18rem" }}>
+              <img src={this.state.albumArts[index]} />
               <Card.Body>
                 <Card.Title>{item.track.track_name}</Card.Title>
                 <hr />
