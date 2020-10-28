@@ -2,6 +2,7 @@ import React, { Component } from "react";
 import { Form, Button, Card, CardDeck } from "react-bootstrap";
 import * as Musixmatch from "musixmatch-node";
 import * as albumArt from "album-art";
+//get bpm api
 
 export default class MyForm extends Component {
   constructor(props) {
@@ -79,7 +80,11 @@ export default class MyForm extends Component {
         <CardDeck>
           {this.state.song.map((item, index) => (
             <Card style={{ width: "18rem" }}>
-              <img src={this.state.albumArts[index]} />
+              <Card.Img
+                variant="top"
+                src={this.state.albumArts[index]}
+                alt=""
+              />
               <Card.Body>
                 <Card.Title>{item.track.track_name}</Card.Title>
                 <hr />
