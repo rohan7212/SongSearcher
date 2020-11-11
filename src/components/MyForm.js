@@ -2,7 +2,11 @@ import React, { Component } from "react";
 import { Form, Button, Card, CardDeck } from "react-bootstrap";
 import * as Musixmatch from "musixmatch-node";
 import * as albumArt from "album-art";
-//get bpm api
+
+//implement piano bpm inputer --> toggle switch
+//algorithm to compare two arrays
+//input genre
+//input time signature
 
 export default class MyForm extends Component {
   constructor(props) {
@@ -15,6 +19,7 @@ export default class MyForm extends Component {
     this.handleLyricsChange = this.handleLyricsChange.bind(this);
     this.handleSubmit = this.handleSubmit.bind(this);
     this.getAlbumArt = this.getAlbumArt.bind(this);
+    this.handleBPMSubmit = this.handleBPMSubmit.bind(this);
   }
 
   handleLyricsChange(event) {
@@ -58,6 +63,18 @@ export default class MyForm extends Component {
     return url;
   }
 
+  async handleBPMSubmit(event) {
+    event.preventDefault();
+    console.log(this.state.bpm);
+    var response = await fetch(
+      `https://api.getsongbpm.com/tempo/?api_key=faa2dcd7d5ec93022e7ef5fb1222b8ed&bpm=${this.state.bpm}`
+    );
+    var body = await response.json();
+    console.log(response);
+    console.log(body);
+    this.setState({ bpmSongArray: body });
+  }
+
   render() {
     return (
       <div>
@@ -94,6 +111,20 @@ export default class MyForm extends Component {
             </Card>
           ))}
         </CardDeck>
+        <Form onSubmit={this.handleBPMSubmit}>
+          <Form.Group controlId="exampleForm.ControlTextarea1">
+            <Form.Label>Enter BPM</Form.Label>
+            <Form.Control
+              type="number"
+              value={this.state.bpm}
+              onChange={(event) => this.setState({ bpm: event.target.value })}
+              placeholder="Enter BPM here..."
+            />
+          </Form.Group>
+          <Button variant="primary" type="submit">
+            Submit
+          </Button>
+        </Form>
       </div>
     );
   }

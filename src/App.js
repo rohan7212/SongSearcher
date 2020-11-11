@@ -6,7 +6,7 @@ import { Container, Row, Col } from "react-bootstrap";
 
 function App() {
   return (
-    <Container fluid>
+    <Container>
       <Row>
         <Col>
           <MyForm></MyForm>
