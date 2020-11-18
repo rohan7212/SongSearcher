@@ -1,12 +1,17 @@
 import React, { Component } from "react";
-import { Form, Button, Card, CardDeck } from "react-bootstrap";
+import { Form, Button, Card, CardDeck, Alert } from "react-bootstrap";
 import * as Musixmatch from "musixmatch-node";
 import * as albumArt from "album-art";
+import { getLyrics, getSong } from "genius-lyrics-api";
 
 //implement piano bpm inputer --> toggle switch
 //algorithm to compare two arrays
 //input genre
 //input time signature
+
+//9-GXJ4Xrxl2JxwhJCv1Sr_Qsoh6LqfYj-ZHWLtcYf-WNIdsnMnV2i62SKj8Pz7RTvSfVZ0KAsvp_dWNgCnZ5VA <--secret
+//dO0b7x1qji4SPXZw9AX9C5f2bT-F9WbwLrE9ao3IFwWfeIjMfzUXueHsKMsj6aEf <-- token
+//M7vuA_L-_x3zZEkS3zbXne-Dmwhio7vJ4Y4Q7G5RPREEb2N8WuYE8OYIYzkcwMWH <-- id
 
 export default class MyForm extends Component {
   constructor(props) {
@@ -15,6 +20,8 @@ export default class MyForm extends Component {
       lyrics: "",
       song: [],
       albumArts: [],
+      hideAlert: true,
+      bpm: 0,
     };
     this.handleLyricsChange = this.handleLyricsChange.bind(this);
     this.handleSubmit = this.handleSubmit.bind(this);
@@ -29,25 +36,78 @@ export default class MyForm extends Component {
   async handleSubmit(event) {
     event.preventDefault();
     const mxm = new Musixmatch("179e0011e5cff7cbbc059b9ebb27ce57");
-    const foundSong = await mxm.searchTrack({
-      q_lyrics: this.state.lyrics,
-      s_track_rating: "desc",
-    });
-    this.setState({
-      song: foundSong.message.body.track_list.slice(0, 5),
-    });
-    console.log(foundSong.message.body.track_list);
-    var tempAlbumArts = [];
-    for (var i = 0; i < this.state.song.length; i++) {
-      var url = await this.getAlbumArt(
-        foundSong.message.body.track_list[i].track.artist_name,
-        foundSong.message.body.track_list[i].track.album_name
+    if (this.state.lyrics === "" && this.state.bpm === 0) {
+      this.setState({ hideAlert: false });
+    } else if (this.state.bpm === 0) {
+      const foundSong = await mxm.searchTrack({
+        q_lyrics: this.state.lyrics,
+        s_track_rating: "desc",
+      });
+      this.setState({
+        // song: foundSong.message.body.track_list.slice(0, 5),
+      });
+      const tempSongs = [];
+      for (var i = 0; i < 5; i++) {
+        const tempSong = {
+          song: foundSong.message.body.track_list[i].track.track_name,
+          artist: foundSong.message.body.track_list[i].track.artist_name,
+          album: foundSong.message.body.track_list[i].track.album_name,
+        };
+        tempSongs.push(tempSong);
+      }
+      this.setState({ song: tempSongs });
+      console.log(foundSong.message.body.track_list);
+      var tempAlbumArts = [];
+      for (var i = 0; i < this.state.song.length; i++) {
+        var url = await this.getAlbumArt(
+          this.state.song[i].artist,
+          this.state.song[i].album
+        );
+        tempAlbumArts.push(url);
+      }
+      this.setState({
+        albumArts: tempAlbumArts,
+      });
+    } else if (this.state.lyrics === "") {
+      console.log(this.state.bpm);
+      var response = await fetch(
+        `https://api.getsongbpm.com/tempo/?api_key=faa2dcd7d5ec93022e7ef5fb1222b8ed&bpm=${this.state.bpm}`
       );
-      tempAlbumArts.push(url);
+      var body = await response.json();
+      console.log(response);
+      console.log(body);
+      const tempSongs = [];
+      for (var i = 0; i < 5; i++) {
+        const tempSong = {
+          song: body.tempo[i].song_title,
+          artist: body.tempo[i].artist.name,
+          album: body.tempo[i].album.title,
+        };
+        tempSongs.push(tempSong);
+      }
+      this.setState({ song: tempSongs });
+      var tempAlbumArts = [];
+      for (var i = 0; i < this.state.song.length; i++) {
+        var url = await this.getAlbumArt(
+          this.state.song[i].artist,
+          this.state.song[i].album
+        );
+        tempAlbumArts.push(url);
+      }
+      this.setState({
+        albumArts: tempAlbumArts,
+      });
+    } else {
+      const options = {
+        apiKey:
+          "dO0b7x1qji4SPXZw9AX9C5f2bT-F9WbwLrE9ao3IFwWfeIjMfzUXueHsKMsj6aEf",
+        title: "Blinding Lights",
+        artist: "The Weeknd",
+        optimizeQuery: true,
+      };
+
+      getLyrics(options).then((lyrics) => console.log(lyrics));
     }
-    this.setState({
-      albumArts: tempAlbumArts,
-    });
   }
 
   async getAlbumArt(artistName, albumName) {
@@ -89,6 +149,15 @@ export default class MyForm extends Component {
               placeholder="Enter lyrics here..."
             />
           </Form.Group>
+          <Form.Group controlId="exampleForm.ControlTextarea1">
+            <Form.Label>Enter BPM</Form.Label>
+            <Form.Control
+              type="number"
+              value={this.state.bpm}
+              onChange={(event) => this.setState({ bpm: event.target.value })}
+              placeholder="Enter BPM here..."
+            />
+          </Form.Group>
           <Button variant="primary" type="submit">
             Submit
           </Button>
@@ -103,28 +172,24 @@ export default class MyForm extends Component {
                 alt=""
               />
               <Card.Body>
-                <Card.Title>{item.track.track_name}</Card.Title>
+                <Card.Title>{item.song}</Card.Title>
                 <hr />
-                <Card.Text>{item.track.artist_name}</Card.Text>
-                <Card.Text>{item.track.album_name}</Card.Text>
+                <Card.Text>{item.artist}</Card.Text>
+                <Card.Text>{item.album}</Card.Text>
               </Card.Body>
             </Card>
           ))}
         </CardDeck>
-        <Form onSubmit={this.handleBPMSubmit}>
-          <Form.Group controlId="exampleForm.ControlTextarea1">
-            <Form.Label>Enter BPM</Form.Label>
-            <Form.Control
-              type="number"
-              value={this.state.bpm}
-              onChange={(event) => this.setState({ bpm: event.target.value })}
-              placeholder="Enter BPM here..."
-            />
-          </Form.Group>
-          <Button variant="primary" type="submit">
-            Submit
-          </Button>
-        </Form>
+        <br />
+        <Alert
+          variant="danger"
+          hidden={this.state.hideAlert}
+          onClose={() => this.setState({ hideAlert: true })}
+          dismissible
+        >
+          <Alert.Heading>Oh snap! You got an error!</Alert.Heading>
+          <p>Please enter an input in the fields.</p>
+        </Alert>
       </div>
     );
   }
