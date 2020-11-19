@@ -5,7 +5,7 @@ export default class NavigationBar extends Component {
     return (
       <div>
         <Navbar bg="light" expand="lg">
-          <Navbar.Brand href="/">Music App</Navbar.Brand>
+          <Navbar.Brand href="/">SongSearcher</Navbar.Brand>
           <Navbar.Collapse id="basic-navbar-nav">
             <Nav className="mr-auto">
               <Nav.Link href="/about">About</Nav.Link>

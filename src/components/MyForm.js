@@ -1,5 +1,5 @@
 import React, { Component } from "react";
-import { Form, Button, Card, CardDeck, Alert } from "react-bootstrap";
+import { Form, Button, Card, CardDeck, Alert, Spinner } from "react-bootstrap";
 import * as Musixmatch from "musixmatch-node";
 import * as albumArt from "album-art";
 import { getLyrics, getSong } from "genius-lyrics-api";
@@ -21,6 +21,7 @@ export default class MyForm extends Component {
       song: [],
       albumArts: [],
       hideAlert: true,
+      submitted: false,
       bpm: 0,
     };
     this.handleLyricsChange = this.handleLyricsChange.bind(this);
@@ -37,8 +38,11 @@ export default class MyForm extends Component {
     event.preventDefault();
     const mxm = new Musixmatch("179e0011e5cff7cbbc059b9ebb27ce57");
     if (this.state.lyrics === "" && this.state.bpm === 0) {
+      //none
       this.setState({ hideAlert: false });
     } else if (this.state.bpm === 0) {
+      //just lyrics
+      this.setState({ submitted: true });
       const foundSong = await mxm.searchTrack({
         q_lyrics: this.state.lyrics,
         s_track_rating: "desc",
@@ -69,6 +73,8 @@ export default class MyForm extends Component {
         albumArts: tempAlbumArts,
       });
     } else if (this.state.lyrics === "") {
+      //just bpm
+      this.setState({ submitted: true });
       console.log(this.state.bpm);
       var response = await fetch(
         `https://api.getsongbpm.com/tempo/?api_key=faa2dcd7d5ec93022e7ef5fb1222b8ed&bpm=${this.state.bpm}`
@@ -98,15 +104,89 @@ export default class MyForm extends Component {
         albumArts: tempAlbumArts,
       });
     } else {
-      const options = {
-        apiKey:
-          "dO0b7x1qji4SPXZw9AX9C5f2bT-F9WbwLrE9ao3IFwWfeIjMfzUXueHsKMsj6aEf",
-        title: "Blinding Lights",
-        artist: "The Weeknd",
-        optimizeQuery: true,
-      };
-
-      getLyrics(options).then((lyrics) => console.log(lyrics));
+      //lyrics and bpm
+      this.setState({ submitted: true });
+      console.log(this.state.bpm);
+      var response = await fetch(
+        `https://api.getsongbpm.com/tempo/?api_key=faa2dcd7d5ec93022e7ef5fb1222b8ed&bpm=${this.state.bpm}`
+      );
+      var tempBody = await response.json();
+      console.log(response);
+      console.log(tempBody);
+      var body = tempBody.tempo;
+      const songsWithScore = [];
+      for (var i = 0; i < 20; i++) {
+        const options = {
+          apiKey:
+            "dO0b7x1qji4SPXZw9AX9C5f2bT-F9WbwLrE9ao3IFwWfeIjMfzUXueHsKMsj6aEf",
+          title: body[i].song_title,
+          artist: body[i].artist.name,
+          optimizeQuery: true,
+        };
+        var lyrics = await getLyrics(options);
+        if (lyrics === null || lyrics === undefined) {
+          continue;
+        }
+        console.log(lyrics.replace(/\W/g, "").toLowerCase());
+        var words = lyrics.replace(/\W/g, "").toLowerCase();
+        var relevanceCounter = 0;
+        while (
+          words.indexOf(
+            this.setState({
+              lyrics: this.state.lyrics.replace(/\W/g, "").toLowerCase(),
+            })
+          ) !== -1
+        ) {
+          relevanceCounter++;
+          words =
+            words.substring(
+              0,
+              words.indexOf(
+                this.setState({
+                  lyrics: this.state.lyrics.replace(/\W/g, "").toLowerCase(),
+                })
+              )
+            ) +
+            words.substring(
+              words.indexOf(
+                this.setState({
+                  lyrics: this.state.lyrics.replace(/\W/g, "").toLowerCase(),
+                })
+              ) + 1
+            );
+        }
+        const songWithScore = {
+          song: body[i].song_title,
+          artist: body[i].artist.name,
+          album: body[i].album.title,
+          score: relevanceCounter,
+        };
+        songsWithScore.push(songWithScore);
+      }
+      //this.setState({ song: songsWithScore });
+      songsWithScore.sort((a, b) => (a.score > b.score ? 1 : -1));
+      const tempSongs = [];
+      for (var i = 0; i < 5; i++) {
+        const tempSong = {
+          song: songsWithScore[i].song,
+          artist: songsWithScore[i].artist,
+          album: songsWithScore[i].album,
+        };
+        tempSongs.push(tempSong);
+      }
+      this.setState({ song: tempSongs });
+      console.log(tempSongs);
+      var tempAlbumArts = [];
+      for (var i = 0; i < this.state.song.length; i++) {
+        var url = await this.getAlbumArt(
+          this.state.song[i].artist,
+          this.state.song[i].album
+        );
+        tempAlbumArts.push(url);
+      }
+      this.setState({
+        albumArts: tempAlbumArts,
+      });
     }
   }
 
@@ -117,7 +197,7 @@ export default class MyForm extends Component {
       url = response;
       //=> http://path/to/rush.jpg
     });
-
+    this.setState({ submitted: false });
     console.log(url);
 
     return url;
@@ -158,10 +238,47 @@ export default class MyForm extends Component {
               placeholder="Enter BPM here..."
             />
           </Form.Group>
+          <Form.Group controlId="exampleForm.ControlTextarea1">
+            <Form.Label>Enter Genre</Form.Label>
+            <Form.Control as="select">
+              <option>-Select-</option>
+              <option>Rock</option>
+              <option>Pop</option>
+              <option>Jazz</option>
+            </Form.Control>
+            {/* value={this.state.bpm}
+            onChange={(event) => this.setState({ bpm: event.target.value })} */}
+          </Form.Group>
+          <Form.Group controlId="exampleForm.ControlTextarea1">
+            <Form.Label>Enter Time Signature</Form.Label>
+            <Form.Row>
+              <Form.Group>
+                <Form.Control
+                  type="number"
+                  //value={this.state.bpm}
+                  //onChange={(event) => this.setState({ bpm: event.target.value })}
+                  //placeholder="Enter BPM here..."
+                />
+              </Form.Group>
+              <h2> / </h2>
+              <Form.Group>
+                <Form.Control as="select">
+                  <option></option>
+                  <option>2</option>
+                  <option>4</option>
+                  <option>8</option>
+                  <option>16</option>
+                  <option>32</option>
+                </Form.Control>
+              </Form.Group>
+            </Form.Row>
+          </Form.Group>
           <Button variant="primary" type="submit">
             Submit
           </Button>
         </Form>
+        <br />
+        <Spinner animation="border" hidden={!this.state.submitted} />
         <br />
         <CardDeck>
           {this.state.song.map((item, index) => (
@@ -188,7 +305,7 @@ export default class MyForm extends Component {
           dismissible
         >
           <Alert.Heading>Oh snap! You got an error!</Alert.Heading>
-          <p>Please enter an input in the fields.</p>
+          <p>Please enter an input in the lyric and bpm fields.</p>
         </Alert>
       </div>
     );
