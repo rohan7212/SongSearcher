@@ -4,14 +4,7 @@ import * as Musixmatch from "musixmatch-node";
 import * as albumArt from "album-art";
 import { getLyrics, getSong } from "genius-lyrics-api";
 
-//implement piano bpm inputer --> toggle switch
-//algorithm to compare two arrays
-//input genre
-//input time signature
-
-//9-GXJ4Xrxl2JxwhJCv1Sr_Qsoh6LqfYj-ZHWLtcYf-WNIdsnMnV2i62SKj8Pz7RTvSfVZ0KAsvp_dWNgCnZ5VA <--secret
-//dO0b7x1qji4SPXZw9AX9C5f2bT-F9WbwLrE9ao3IFwWfeIjMfzUXueHsKMsj6aEf <-- token
-//M7vuA_L-_x3zZEkS3zbXne-Dmwhio7vJ4Y4Q7G5RPREEb2N8WuYE8OYIYzkcwMWH <-- id
+require("dotenv").config();
 
 export default class MyForm extends Component {
   constructor(props) {
@@ -26,6 +19,7 @@ export default class MyForm extends Component {
     };
     this.handleLyricsChange = this.handleLyricsChange.bind(this);
     this.handleSubmit = this.handleSubmit.bind(this);
+    this.handleReset = this.handleReset.bind(this);
     this.getAlbumArt = this.getAlbumArt.bind(this);
     this.handleBPMSubmit = this.handleBPMSubmit.bind(this);
   }
@@ -36,7 +30,7 @@ export default class MyForm extends Component {
 
   async handleSubmit(event) {
     event.preventDefault();
-    const mxm = new Musixmatch("179e0011e5cff7cbbc059b9ebb27ce57");
+    const mxm = new Musixmatch(process.env.MUSIXMATCH_APIKEY);
     if (this.state.lyrics === "" && this.state.bpm === 0) {
       //none
       this.setState({ hideAlert: false });
@@ -77,7 +71,9 @@ export default class MyForm extends Component {
       this.setState({ submitted: true });
       console.log(this.state.bpm);
       var response = await fetch(
-        `https://api.getsongbpm.com/tempo/?api_key=faa2dcd7d5ec93022e7ef5fb1222b8ed&bpm=${this.state.bpm}`
+        `https://api.getsongbpm.com/tempo/?api_key=` +
+          process.env.APIKEY3 +
+          `&bpm=${this.state.bpm}`
       );
       var body = await response.json();
       console.log(response);
@@ -108,7 +104,9 @@ export default class MyForm extends Component {
       this.setState({ submitted: true });
       console.log(this.state.bpm);
       var response = await fetch(
-        `https://api.getsongbpm.com/tempo/?api_key=faa2dcd7d5ec93022e7ef5fb1222b8ed&bpm=${this.state.bpm}`
+        `https://api.getsongbpm.com/tempo/?api_key=` +
+          process.env.APIKEY3 +
+          `&bpm=${this.state.bpm}`
       );
       var tempBody = await response.json();
       console.log(response);
@@ -117,8 +115,7 @@ export default class MyForm extends Component {
       const songsWithScore = [];
       for (var i = 0; i < 20; i++) {
         const options = {
-          apiKey:
-            "dO0b7x1qji4SPXZw9AX9C5f2bT-F9WbwLrE9ao3IFwWfeIjMfzUXueHsKMsj6aEf",
+          apiKey: process.env.APIKEY2,
           title: body[i].song_title,
           artist: body[i].artist.name,
           optimizeQuery: true,
@@ -190,6 +187,16 @@ export default class MyForm extends Component {
     }
   }
 
+  async handleReset(event) {
+    event.preventDefault();
+    this.setState({ lyrics: "" });
+    this.setState({ song: [] });
+    this.setState({ albumArts: [] });
+    this.setState({ hideAlert: true });
+    this.setState({ submitted: false });
+    this.setState({ bpm: 0 });
+  }
+
   async getAlbumArt(artistName, albumName) {
     var url = "";
 
@@ -207,7 +214,9 @@ export default class MyForm extends Component {
     event.preventDefault();
     console.log(this.state.bpm);
     var response = await fetch(
-      `https://api.getsongbpm.com/tempo/?api_key=faa2dcd7d5ec93022e7ef5fb1222b8ed&bpm=${this.state.bpm}`
+      `https://api.getsongbpm.com/tempo/?api_key=` +
+        process.env.APIKEY3 +
+        `&bpm=${this.state.bpm}`
     );
     var body = await response.json();
     console.log(response);
@@ -276,6 +285,8 @@ export default class MyForm extends Component {
           <Button variant="primary" type="submit">
             Submit
           </Button>
+          &nbsp;
+          <Button as="input" type="reset" value="Reset" />
         </Form>
         <br />
         <Spinner animation="border" hidden={!this.state.submitted} />
